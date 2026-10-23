@@ -179,12 +179,26 @@
       state.orders = state.orders.filter((entry) => entry.id !== order.id); save(); renderOrders(); toast('訂單已刪除');
     } else if (event.target.closest('.screenshot-order')) await saveOrderImage(card, order);
   });
+  function invoiceMarkup(order) {
+    const entries = order.items.map((item) => {
+      const product = productById(item.productId);
+      if (!product) return null;
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+      const unitPrice = twd(product.quotePrice > 0 ? product.quotePrice : (Number(product.purchasePrice) || 0) * (state.rates[product.currency] || 0));
+      return { name: product.name || '商品', quantity, unitPrice, subtotal: unitPrice * quantity };
+    }).filter(Boolean);
+    const totalQuantity = entries.reduce((sum, entry) => sum + entry.quantity, 0);
+    const total = twd(entries.reduce((sum, entry) => sum + entry.subtotal, 0));
+    return `<section class="invoice-sheet"><div class="invoice-buyer"><span>買家</span><strong>${escapeHtml(order.name.trim() || '未命名買家')}</strong></div><table class="invoice-table"><thead><tr><th>商品</th><th>單價</th><th>數量</th><th>小計</th></tr></thead><tbody>${entries.length ? entries.map((entry) => `<tr><td>${escapeHtml(entry.name)}</td><td>NT$ ${money(entry.unitPrice, 0)}</td><td>${entry.quantity} 件</td><td>NT$ ${money(entry.subtotal, 0)}</td></tr>`).join('') : '<tr><td colspan="4" class="invoice-empty">尚未加入商品</td></tr>'}</tbody><tfoot><tr><td></td><td></td><td class="invoice-quantity-total"><span>總數量</span><strong>${totalQuantity} 件</strong></td><td class="invoice-money-total"><span>總金額</span><strong>NT$ ${money(total, 0)}</strong></td></tr></tfoot></table></section>`;
+  }
+
   async function saveOrderImage(card, order) {
     const button = $('.screenshot-order', card); button.disabled = true; const originalText = button.textContent;
-    button.textContent = '圖片製作中…'; card.classList.add('capture-mode');
+    button.textContent = '圖片製作中…';
+    const invoice = document.createElement('div'); invoice.className = 'invoice-capture'; invoice.innerHTML = invoiceMarkup(order); document.body.append(invoice);
     try {
       const [{ default: html2canvas }] = await Promise.all([import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm')]);
-      const canvas = await html2canvas(card, { backgroundColor: '#ffffff', scale: Math.max(2, window.devicePixelRatio || 1), useCORS: true, logging: false });
+      const canvas = await html2canvas(invoice.firstElementChild, { backgroundColor: '#ffffff', scale: Math.max(2, window.devicePixelRatio || 1), useCORS: true, logging: false });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')); if (!blob) throw new Error('PNG encoding failed');
       const safeName = (order.name.trim() || '買家訂單').replace(/[\\/:*?"<>|]/g, '-');
       const file = new File([blob], `${safeName}-代購訂單.png`, { type: 'image/png' });
@@ -195,7 +209,7 @@
         setTimeout(() => URL.revokeObjectURL(url), 1000); toast('訂單圖片已下載');
       }
     } catch (error) { console.error(error); toast(navigator.onLine ? '圖片製作失敗，請再試一次' : '存圖需要網路，請連線後再試'); }
-    finally { card.classList.remove('capture-mode'); button.disabled = false; button.textContent = originalText; }
+    finally { invoice.remove(); button.disabled = false; button.textContent = originalText; }
   }
   render();
 })();
