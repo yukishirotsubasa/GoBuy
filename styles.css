@@ -24,3 +24,6 @@
   .order-actions{padding-left:12px;padding-right:12px}
 }
 
+.product-table{min-width:540px;table-layout:fixed}.product-table thead th:nth-child(1){width:30%}.product-table thead th:nth-child(2){width:19%}.product-table thead th:nth-child(3){width:21%}.product-table thead th:nth-child(4){width:24%}.product-table tbody td:last-child{width:34px}.product-currency{width:100%;padding:0 3px!important;font-size:10px!important}.quote-editor{min-width:0}.auto-quote{display:block;padding:3px 1px 0;font-size:8px;line-height:1.2;white-space:nowrap;color:#778374}.product-table .table-price-input{gap:2px}.product-table .table-price-input>span{font-size:8px}.product-table .table-price-input .table-input{padding:0 3px;font-size:11px}
+@media(max-width:700px){.product-table{min-width:560px}.product-currency{font-size:10px!important}.auto-quote{font-size:9px}}
+

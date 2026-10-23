@@ -56,8 +56,13 @@
       const costPrice = (Number(product.purchasePrice) || 0) * (state.rates[product.currency] || 0);
       result.cost += costPrice * quantity;
       result.quote += (product.quotePrice > 0 ? Number(product.quotePrice) : costPrice) * quantity;
+      result.quantity += quantity;
       return result;
-    }, { cost: 0, quote: 0 });
+    }, { cost: 0, quote: 0, quantity: 0 });
+  }
+  function quantityLabel(order) {
+    const quantity = totals(order).quantity;
+    return `${money(quantity, 0)} 件`;
   }
   function renderRates() {
     $('#rate-rows').innerHTML = Object.entries(CURRENCIES).map(([code, currency]) => `
@@ -73,7 +78,7 @@
       <td><label class="sr-only" for="name-${escapeHtml(product.id)}">商品名稱</label><input class="table-input product-name" id="name-${escapeHtml(product.id)}" maxlength="50" value="${escapeHtml(product.name)}" placeholder="商品名稱" /></td>
       <td><label class="sr-only" for="currency-${escapeHtml(product.id)}">購買價格貨幣</label><select class="table-input product-currency" id="currency-${escapeHtml(product.id)}" aria-label="購買價格貨幣">${Object.entries(CURRENCIES).map(([code, currency]) => `<option value="${code}" ${code === product.currency ? 'selected' : ''}>${currency.symbol} ${currency.name}</option>`).join('')}</select></td>
       <td><label class="sr-only" for="purchase-${escapeHtml(product.id)}">購買單價，${CURRENCIES[product.currency].name}</label><div class="table-price-input"><span>${CURRENCIES[product.currency].symbol}</span><input class="table-input product-purchase" id="purchase-${escapeHtml(product.id)}" type="number" inputmode="decimal" min="0" step="0.01" value="${product.purchasePrice || ''}" placeholder="0" /></div></td>
-      <td><label class="sr-only" for="quote-${escapeHtml(product.id)}">出單單價，新台幣</label><div class="table-price-input"><span>NT$</span><input class="table-input product-quote" id="quote-${escapeHtml(product.id)}" type="number" inputmode="decimal" min="0" step="1" value="${product.quotePrice || ''}" placeholder="自動" /></div></td>
+      <td><label class="sr-only" for="quote-${escapeHtml(product.id)}">出單單價，新台幣；留白使用自動換算價</label><div class="quote-editor"><div class="table-price-input"><span>NT$</span><input class="table-input product-quote" id="quote-${escapeHtml(product.id)}" type="number" inputmode="numeric" min="0" step="1" value="${product.quotePrice || ''}" placeholder="自動" /></div><span class="auto-quote">自動 NT$ ${money(twd((Number(product.purchasePrice) || 0) * (state.rates[product.currency] || 0)), 0)}</span></div></td>
       <td><button class="icon-button delete-product" type="button" aria-label="刪除 ${escapeHtml(product.name || '商品')}" title="刪除商品">×</button></td></tr>`).join('');
   }
   function productOptions(selectedId) {
@@ -88,7 +93,7 @@
       const quantity = Math.max(1, Number(item.quantity) || 1);
       return `<div class="order-item" data-index="${index}"><select class="item-select" aria-label="商品">${productOptions(item.productId)}</select><div class="quantity-control"><button class="quantity-step quantity-decrease" type="button" aria-label="減少數量">−</button><input class="qty-input" type="number" inputmode="numeric" min="1" step="1" value="${quantity}" aria-label="數量" /><button class="quantity-step quantity-increase" type="button" aria-label="增加數量">＋</button></div><span class="item-unit">${product ? `NT$ ${money(unitPrice, 0)} / 件 × ${quantity} 件 = NT$ ${money(unitPrice * quantity, 0)}` : '選擇商品'}</span><button class="icon-button remove-row" type="button" aria-label="移除此商品列" title="移除品項">×</button></div>`;
     }).join('');
-    return `<article class="order-card" data-order-id="${escapeHtml(order.id)}"><div class="order-card-top"><div class="order-title-row"><input class="order-name-input" maxlength="40" value="${escapeHtml(order.name)}" placeholder="買家名稱（例如：小美）" aria-label="買家名稱" /><button class="icon-button remove-order" type="button" aria-label="刪除訂單" title="刪除訂單">···</button></div></div><div class="order-body">${rows || '<div class="empty-inline">先加入這位買家要買的商品。</div>'}<button class="add-item" type="button">＋ 加入商品</button></div><div class="order-summary"><div class="summary-line"><span>商品成本（依商品幣別匯率換算）</span><strong>NT$ ${money(cost, 0)}</strong></div><div class="summary-line"><span>買家商品報價</span><strong>NT$ ${money(quote, 0)}</strong></div><div class="summary-line summary-total"><span>應收商品金額</span><strong>NT$ ${money(quote, 0)}</strong></div></div><div class="order-actions"><button class="button button-outline screenshot-order" type="button">▧　存成訂單圖片</button></div></article>`;
+    return `<article class="order-card" data-order-id="${escapeHtml(order.id)}"><div class="order-card-top"><div class="order-title-row"><input class="order-name-input" maxlength="40" value="${escapeHtml(order.name)}" placeholder="買家名稱（例如：小美）" aria-label="買家名稱" /><button class="icon-button remove-order" type="button" aria-label="刪除訂單" title="刪除訂單">···</button></div></div><div class="order-body">${rows || '<div class="empty-inline">先加入這位買家要買的商品。</div>'}<button class="add-item" type="button">＋ 加入商品</button></div><div class="order-summary"><div class="summary-line"><span>總數量</span><strong>${quantityLabel(order)}</strong></div><div class="summary-line summary-total"><span>訂單總額</span><strong>NT$ ${money(twd(quote), 0)}</strong></div></div><div class="order-actions"><button class="button button-outline screenshot-order" type="button">▧　存成訂單圖片</button></div></article>`;
   }
   function renderOrders() {
     const list = $('#orders-list');
@@ -97,13 +102,13 @@
   function render() { renderRates(); renderProducts(); renderOrders(); }
   function updateCard(card) {
     const order = state.orders.find((entry) => entry.id === card.dataset.orderId); if (!order) return;
-    const { cost, quote } = totals(order); const lines = $$('.summary-line strong', card);
-    lines[0].textContent = `NT$ ${money(twd(cost), 0)}`; lines[1].textContent = `NT$ ${money(twd(quote), 0)}`; lines[2].textContent = `NT$ ${money(twd(quote), 0)}`;
+    const { quote } = totals(order); const lines = $$('.summary-line strong', card);
+    lines[0].textContent = quantityLabel(order); lines[1].textContent = `NT$ ${money(twd(quote), 0)}`;
   }
 
   $('#rate-rows').addEventListener('input', (event) => {
     if (!event.target.matches('.rate-input')) return;
-    state.rates[event.target.dataset.currency] = Math.max(0, Number(event.target.value) || 0); save(); renderOrders();
+    state.rates[event.target.dataset.currency] = Math.max(0, Number(event.target.value) || 0); save(); renderProducts(); renderOrders();
   });
   $('#add-product').addEventListener('click', () => {
     const product = { id: id(), name: '', currency: 'EUR', purchasePrice: 0, quotePrice: 0 };
