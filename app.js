@@ -55,6 +55,9 @@
     $('#order-image-preview').src = previewUrl;
     $('#download-order-image').href = previewUrl;
     $('#download-order-image').download = fileName;
+    $('#download-order-image').textContent = /Line\//i.test(navigator.userAgent) || /LINE/i.test(navigator.userAgent)
+      ? '在 LINE 中無法直接存檔？點此開啟圖片'
+      : '下載圖片';
     $('#image-preview').hidden = false;
     $('#close-preview').focus();
   }
@@ -224,6 +227,7 @@
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')); if (!blob) throw new Error('PNG encoding failed');
       const safeName = (order.name.trim() || '買家訂單').replace(/[\\/:*?"<>|]/g, '-');
       const file = new File([blob], `${safeName}-代購訂單.png`, { type: 'image/png' });
+      const isLineBrowser = /Line\//i.test(navigator.userAgent) || /LINE/i.test(navigator.userAgent);
       const canShareFile = typeof navigator.share === 'function' && (!navigator.canShare || navigator.canShare({ files: [file] }));
       if (canShareFile) {
         try {
@@ -237,13 +241,16 @@
             showImagePreview(blob, file.name);
           }
         }
-      } else if (/Line\//i.test(navigator.userAgent) || /LINE/i.test(navigator.userAgent)) {
+      } else if (isLineBrowser) {
         showImagePreview(blob, file.name);
       } else {
         const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = file.name; link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000); toast('訂單圖片已下載');
+        setTimeout(() => URL.revokeObjectURL(url), 1000); toast('已送出圖片下載；若未出現，請查看瀏覽器下載項目');
       }
-    } catch (error) { console.error(error); toast(navigator.onLine ? '圖片製作失敗，請再試一次' : '存圖需要網路，請連線後再試'); }
+    } catch (error) {
+      console.error(error);
+      toast(navigator.onLine ? '圖片製作失敗，請再試一次' : '存圖需要網路，請連線後再試');
+    }
     finally { invoice.remove(); button.disabled = false; button.textContent = originalText; }
   }
   render();
