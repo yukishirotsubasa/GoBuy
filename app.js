@@ -85,7 +85,8 @@
     const rows = order.items.map((item, index) => {
       const product = productById(item.productId);
       const unitPrice = product ? twd(product.quotePrice > 0 ? product.quotePrice : (Number(product.purchasePrice) || 0) * (state.rates[product.currency] || 0)) : 0;
-      return `<div class="order-item" data-index="${index}"><select class="item-select" aria-label="商品">${productOptions(item.productId)}</select><input class="qty-input" type="number" inputmode="numeric" min="1" step="1" value="${Math.max(1, Number(item.quantity) || 1)}" aria-label="數量" /><span class="item-unit">${product ? `NT$ ${money(unitPrice, 0)} / 件` : '選擇商品'}</span><button class="icon-button remove-row" type="button" aria-label="移除此商品列" title="移除品項">×</button></div>`;
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+      return `<div class="order-item" data-index="${index}"><select class="item-select" aria-label="商品">${productOptions(item.productId)}</select><div class="quantity-control"><button class="quantity-step quantity-decrease" type="button" aria-label="減少數量">−</button><input class="qty-input" type="number" inputmode="numeric" min="1" step="1" value="${quantity}" aria-label="數量" /><button class="quantity-step quantity-increase" type="button" aria-label="增加數量">＋</button></div><span class="item-unit">${product ? `NT$ ${money(unitPrice, 0)} / 件 × ${quantity} 件 = NT$ ${money(unitPrice * quantity, 0)}` : '選擇商品'}</span><button class="icon-button remove-row" type="button" aria-label="移除此商品列" title="移除品項">×</button></div>`;
     }).join('');
     return `<article class="order-card" data-order-id="${escapeHtml(order.id)}"><div class="order-card-top"><div class="order-title-row"><input class="order-name-input" maxlength="40" value="${escapeHtml(order.name)}" placeholder="買家名稱（例如：小美）" aria-label="買家名稱" /><button class="icon-button remove-order" type="button" aria-label="刪除訂單" title="刪除訂單">···</button></div></div><div class="order-body">${rows || '<div class="empty-inline">先加入這位買家要買的商品。</div>'}<button class="add-item" type="button">＋ 加入商品</button></div><div class="order-summary"><div class="summary-line"><span>商品成本（依商品幣別匯率換算）</span><strong>NT$ ${money(cost, 0)}</strong></div><div class="summary-line"><span>買家商品報價</span><strong>NT$ ${money(quote, 0)}</strong></div><div class="summary-line summary-total"><span>應收商品金額</span><strong>NT$ ${money(quote, 0)}</strong></div></div><div class="order-actions"><button class="button button-outline screenshot-order" type="button">▧　存成訂單圖片</button></div></article>`;
   }
@@ -140,8 +141,14 @@
     if (event.target.matches('.qty-input')) {
       const item = order.items[Number(event.target.closest('.order-item').dataset.index)];
       item.quantity = Math.max(1, Number(event.target.value) || 1); event.target.value = item.quantity; updateCard(card);
+      const product = productById(item.productId);
+      const unitPrice = product ? twd(product.quotePrice > 0 ? product.quotePrice : (Number(product.purchasePrice) || 0) * (state.rates[product.currency] || 0)) : 0;
+      $('.item-unit', event.target.closest('.order-item')).textContent = product ? `NT$ ${money(unitPrice, 0)} / 件 × ${item.quantity} 件 = NT$ ${money(unitPrice * item.quantity, 0)}` : '選擇商品';
     }
     save();
+  });
+  $('#orders-list').addEventListener('focusin', (event) => {
+    if (event.target.matches('.qty-input')) event.target.select();
   });
   $('#orders-list').addEventListener('change', (event) => {
     if (!event.target.matches('.item-select')) return;
@@ -151,7 +158,13 @@
   $('#orders-list').addEventListener('click', async (event) => {
     const card = event.target.closest('.order-card'); if (!card) return;
     const order = state.orders.find((entry) => entry.id === card.dataset.orderId);
-    if (event.target.closest('.add-item')) {
+    const stepButton = event.target.closest('.quantity-step');
+    if (stepButton) {
+      const row = stepButton.closest('.order-item');
+      const item = order.items[Number(row.dataset.index)];
+      item.quantity = Math.max(1, item.quantity + (stepButton.classList.contains('quantity-increase') ? 1 : -1));
+      save(); renderOrders();
+    } else if (event.target.closest('.add-item')) {
       order.items.push({ productId: state.products[0]?.id || '', quantity: 1 }); save(); renderOrders();
       const rows = $$('.order-item', $('#orders-list')).filter((row) => row.closest('.order-card')?.dataset.orderId === order.id);
       $('.item-select', rows[rows.length - 1])?.focus();

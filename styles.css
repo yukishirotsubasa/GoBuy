@@ -12,11 +12,13 @@
 
 @media(max-width:700px){
   .order-body{padding:12px 12px 4px}
-  .order-item{grid-template-columns:minmax(0,1fr) 64px 32px;grid-template-areas:"product quantity remove" "price price price";gap:7px 8px;padding:10px 9px;margin:0 0 9px;border:1px solid #edf0e9;border-radius:11px;background:#fdfefb}
+  .order-item{grid-template-columns:minmax(0,1fr) 114px 32px;grid-template-areas:"product quantity remove" "price price price";gap:7px 8px;padding:10px 9px;margin:0 0 9px;border:1px solid #edf0e9;border-radius:11px;background:#fdfefb}
   .order-item .item-select{grid-area:product;min-width:0;width:100%;height:44px;font-size:13px;padding:0 9px;white-space:normal;text-overflow:ellipsis}
-  .order-item .qty-input{grid-area:quantity;width:64px;height:44px;font-size:14px}
+  .quantity-control{grid-area:quantity;display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:3px}
+  .quantity-step{width:34px;height:40px;border:1px solid #e4e9df;border-radius:9px;background:#f5f7f2;color:var(--green-dark);font-size:18px;line-height:1}
+  .order-item .qty-input{width:100%;height:42px;font-size:14px;text-align:center;padding:0 2px}
   .order-item .remove-row{grid-area:remove;width:36px;height:40px;font-size:20px}
-  .order-item .item-unit{grid-area:price;white-space:normal;font-size:11px;padding:0 2px 1px;color:#777f73}
+  .order-item .item-unit{grid-area:price;white-space:normal;font-size:11px;padding:0 2px 1px;color:#596457;font-variant-numeric:tabular-nums}
   .add-item{min-height:40px;padding:7px 4px;font-size:12px}
   .order-summary{margin-left:12px;margin-right:12px}
   .order-actions{padding-left:12px;padding-right:12px}
