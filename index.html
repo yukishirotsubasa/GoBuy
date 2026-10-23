@@ -20,6 +20,15 @@
       <footer><span>小購 <span class="footer-star">✳</span> 好好算，放心買。</span><span>你的資料只存在這台裝置</span></footer>
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="image-preview" class="image-preview" hidden>
+      <div class="image-preview-backdrop" data-close-preview></div>
+      <section class="image-preview-panel" role="dialog" aria-modal="true" aria-labelledby="image-preview-title">
+        <div class="image-preview-heading"><div><span class="section-index">訂單圖片</span><h2 id="image-preview-title">長按圖片即可儲存</h2></div><button id="close-preview" class="icon-button" type="button" aria-label="關閉圖片預覽">×</button></div>
+        <p class="image-preview-hint">若分享選單無法儲存，請長按下方圖片並選擇「加入照片」或「儲存圖片」。</p>
+        <img id="order-image-preview" alt="代購訂單圖片，長按可儲存" />
+        <a id="download-order-image" class="button button-primary full-button" download>下載圖片</a>
+      </section>
+    </div>
     <script src="./app.js"></script>
   </body>
 </html>

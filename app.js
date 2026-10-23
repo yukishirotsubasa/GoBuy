@@ -48,6 +48,21 @@
     const element = $('#toast'); element.textContent = message; element.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => element.classList.remove('show'), 2200);
   }
+  let previewUrl = '';
+  function showImagePreview(blob, fileName) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(blob);
+    $('#order-image-preview').src = previewUrl;
+    $('#download-order-image').href = previewUrl;
+    $('#download-order-image').download = fileName;
+    $('#image-preview').hidden = false;
+    $('#close-preview').focus();
+  }
+  function closeImagePreview() {
+    $('#image-preview').hidden = true;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = '';
+  }
   function productById(productId) { return state.products.find((product) => product.id === productId); }
   function totals(order) {
     return order.items.reduce((result, item) => {
@@ -179,6 +194,13 @@
       state.orders = state.orders.filter((entry) => entry.id !== order.id); save(); renderOrders(); toast('訂單已刪除');
     } else if (event.target.closest('.screenshot-order')) await saveOrderImage(card, order);
   });
+  $('#close-preview').addEventListener('click', closeImagePreview);
+  $('#image-preview').addEventListener('click', (event) => {
+    if (event.target.matches('[data-close-preview]')) closeImagePreview();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('#image-preview').hidden) closeImagePreview();
+  });
   function invoiceMarkup(order) {
     const entries = order.items.map((item) => {
       const product = productById(item.productId);
@@ -202,8 +224,21 @@
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')); if (!blob) throw new Error('PNG encoding failed');
       const safeName = (order.name.trim() || '買家訂單').replace(/[\\/:*?"<>|]/g, '-');
       const file = new File([blob], `${safeName}-代購訂單.png`, { type: 'image/png' });
-      if (navigator.canShare?.({ files: [file] }) && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        await navigator.share({ files: [file], title: `${safeName}的代購訂單` }); toast('已開啟分享，可儲存到相簿');
+      const canShareFile = typeof navigator.share === 'function' && (!navigator.canShare || navigator.canShare({ files: [file] }));
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: `${safeName}的代購訂單` });
+          toast('已開啟系統分享，可儲存圖片');
+        } catch (shareError) {
+          if (shareError.name === 'AbortError') {
+            toast('已取消分享');
+          } else {
+            console.warn('System image sharing unavailable; showing image preview.', shareError);
+            showImagePreview(blob, file.name);
+          }
+        }
+      } else if (/Line\//i.test(navigator.userAgent) || /LINE/i.test(navigator.userAgent)) {
+        showImagePreview(blob, file.name);
       } else {
         const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = file.name; link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000); toast('訂單圖片已下載');
