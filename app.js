@@ -111,7 +111,7 @@
       const quantity = Math.max(1, Number(item.quantity) || 1);
       return `<div class="order-item" data-index="${index}"><select class="item-select" aria-label="商品">${productOptions(item.productId)}</select><div class="quantity-control"><button class="quantity-step quantity-decrease" type="button" aria-label="減少數量">−</button><input class="qty-input" type="number" inputmode="numeric" min="1" step="1" value="${quantity}" aria-label="數量" /><button class="quantity-step quantity-increase" type="button" aria-label="增加數量">＋</button></div><span class="item-unit">${product ? `NT$ ${money(unitPrice, 0)} / 件 × ${quantity} 件 = NT$ ${money(unitPrice * quantity, 0)}` : '選擇商品'}</span><button class="icon-button remove-row" type="button" aria-label="移除此商品列" title="移除品項">×</button></div>`;
     }).join('');
-    return `<article class="order-card" data-order-id="${escapeHtml(order.id)}"><div class="order-card-top"><div class="order-title-row"><input class="order-name-input" maxlength="40" value="${escapeHtml(order.name)}" placeholder="買家名稱（例如：小美）" aria-label="買家名稱" /><button class="icon-button remove-order" type="button" aria-label="刪除訂單" title="刪除訂單">···</button></div></div><div class="order-body">${rows || '<div class="empty-inline">先加入這位買家要買的商品。</div>'}<button class="add-item" type="button">＋ 加入商品</button></div><div class="order-summary"><div class="summary-line"><span>總數量</span><strong>${quantityLabel(order)}</strong></div><div class="summary-line summary-total"><span>訂單總額</span><strong>NT$ ${money(twd(quote), 0)}</strong></div></div><div class="order-actions"><button class="button button-outline screenshot-order" type="button">▧　存成訂單圖片</button></div></article>`;
+    return `<article class="order-card" data-order-id="${escapeHtml(order.id)}"><div class="order-card-top"><div class="order-title-row"><input class="order-name-input" maxlength="40" value="${escapeHtml(order.name)}" placeholder="買家名稱（例如：小美）" aria-label="買家名稱" /><button class="icon-button remove-order" type="button" aria-label="刪除訂單" title="刪除訂單">×</button></div></div><div class="order-body">${rows || '<div class="empty-inline">先加入這位買家要買的商品。</div>'}<button class="add-item" type="button">＋ 加入商品</button></div><div class="order-summary"><div class="summary-line"><span>總數量</span><strong>${quantityLabel(order)}</strong></div><div class="summary-line summary-total"><span>訂單總額</span><strong>NT$ ${money(twd(quote), 0)}</strong></div></div><div class="order-actions"><button class="button button-outline screenshot-order" type="button">▧　存成訂單圖片</button></div></article>`;
   }
   function renderOrders() {
     const list = $('#orders-list');
@@ -150,7 +150,10 @@
   });
   $('#product-rows').addEventListener('click', (event) => {
     const button = event.target.closest('.delete-product'); if (!button) return;
-    const row = button.closest('tr'); state.products = state.products.filter((product) => product.id !== row.dataset.productId);
+    const row = button.closest('tr');
+    const product = productById(row.dataset.productId);
+    if (!window.confirm(`確定刪除商品「${product?.name || '未命名商品'}」？`)) return;
+    state.products = state.products.filter((entry) => entry.id !== row.dataset.productId);
     save(); renderProducts(); renderOrders(); toast('商品已刪除');
   });
   $('#add-order').addEventListener('click', () => {
@@ -194,6 +197,8 @@
     } else if (event.target.closest('.remove-row')) {
       order.items.splice(Number(event.target.closest('.order-item').dataset.index), 1); save(); renderOrders();
     } else if (event.target.closest('.remove-order')) {
+      const orderName = order.name.trim() || '未命名訂單';
+      if (!window.confirm(`確定刪除「${orderName}」整筆訂單？`)) return;
       state.orders = state.orders.filter((entry) => entry.id !== order.id); save(); renderOrders(); toast('訂單已刪除');
     } else if (event.target.closest('.screenshot-order')) await saveOrderImage(card, order);
   });
