@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7f2" />
+    <meta name="description" content="在手機上快速計算代購訂單與買家報價。" />
+    <title>小購｜代購計算器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar"><a class="brand" href="#top" aria-label="小購首頁"><span class="brand-mark">購</span><span><strong>小購</strong><small>代購計算器</small></span></a><span class="local-badge"><span></span>資料已存於此裝置</span></header>
+      <section class="hero" id="top"><div><p class="eyebrow">ORDER DESK <span>•</span> 你的代購小幫手</p><h1>每筆代購，<em>算得剛剛好。</em></h1><p class="hero-copy">管理商品和匯率，為每位買家建立清楚的報價。</p></div><div class="hero-doodle" aria-hidden="true"><span>✳</span><span>¥</span></div></section>
+      <section class="settings-grid" aria-label="商品與匯率設定">
+        <article class="panel rate-panel"><div class="panel-heading"><div><span class="section-index">01 / 匯率</span><h2>外幣匯率</h2></div><span class="heading-icon">↗</span></div><p class="panel-intro">設定各幣別換算新台幣的匯率。</p><div class="table-scroll"><table class="data-table rate-table"><thead><tr><th>幣別</th><th>匯率 <small>＝ TWD</small></th></tr></thead><tbody id="rate-rows"></tbody></table></div></article>
+        <article class="panel products-panel"><div class="panel-heading"><div><span class="section-index">02 / 商品目錄</span><h2>商品單價</h2></div><span class="heading-icon">✳</span></div><p class="panel-intro">直接編輯商品，購買單價可個別選擇貨幣。</p><div class="table-scroll"><table class="data-table product-table"><thead><tr><th>商品名稱</th><th>購買幣別</th><th>購買單價</th><th>出單單價</th><th></th></tr></thead><tbody id="product-rows"></tbody></table></div><button id="add-product" class="button button-soft full-button add-product"><span>＋</span> 新增商品</button></article>
+      </section>
+      <section class="orders-section"><div class="orders-heading"><div><span class="section-index">03 / 買家訂單</span><h2>今天幫誰買？</h2><p>每位買家一張訂單卡，確認內容後可直接存成圖片。</p></div><button id="add-order" class="button button-primary"><span>＋</span> 新增訂單</button></div><div id="orders-list" class="orders-list" aria-live="polite"></div></section>
+      <footer><span>小購 <span class="footer-star">✳</span> 好好算，放心買。</span><span>你的資料只存在這台裝置</span></footer>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
