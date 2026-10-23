@@ -61,6 +61,16 @@
     $('#image-preview').hidden = false;
     $('#close-preview').focus();
   }
+  async function copyImageToClipboard(blob) {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') return false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      return true;
+    } catch (error) {
+      console.warn('Clipboard image write is unavailable.', error);
+      return false;
+    }
+  }
   function closeImagePreview() {
     $('#image-preview').hidden = true;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -243,11 +253,15 @@
             toast('已取消分享');
           } else {
             console.warn('System image sharing unavailable; showing image preview.', shareError);
+            const copied = await copyImageToClipboard(blob);
             showImagePreview(blob, file.name);
+            toast(copied ? '圖片已複製，可到 LINE 輸入框長按並貼上' : '無法使用剪貼簿，請長按預覽圖片儲存');
           }
         }
       } else if (isLineBrowser) {
+        const copied = await copyImageToClipboard(blob);
         showImagePreview(blob, file.name);
+        toast(copied ? '圖片已複製，可到 LINE 輸入框長按並貼上' : '此 LINE 瀏覽器不支援複製圖片，請長按預覽圖片儲存');
       } else {
         const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = file.name; link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000); toast('已送出圖片下載；若未出現，請查看瀏覽器下載項目');
